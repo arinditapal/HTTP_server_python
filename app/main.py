@@ -7,10 +7,17 @@ def main():
 
     conn, addr = server_socket.accept()
 
-    print(conn, addr) 
+    # print(conn, addr) 
     with conn:
         data = conn.recv(1024)
-        conn.send(b'HTTP/1.1 200 OK\r\n\r\n')
+        print(data)
+        req = data.split()
+        path = req[1]
+        if path == b'/':
+            conn.send(b'HTTP/1.1 200 OK \r\n\r\n')
+        else:
+            conn.send(b'HTTP/1.1 404 NOT FOUND \r\n\r\n')
+
 
     print("connection ended")
 
