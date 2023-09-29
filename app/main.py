@@ -23,7 +23,8 @@ def main():
             elif "/echo/" in request_path:
                 print("req has mess")
 
-                message = request_path.split('/')[2]
+                message = request_path[6:]
+                print(message)
 
                 res_body = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(message)}\r\n\r\n{message}"
 
