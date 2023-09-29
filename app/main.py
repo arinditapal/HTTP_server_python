@@ -5,21 +5,34 @@ def main():
 
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
 
-    conn, addr = server_socket.accept()
-
     # print(conn, addr) 
-    with conn:
-        data = conn.recv(1024)
-        print(data)
-        req = data.split()
-        path = req[1]
-        if path == b'/':
-            conn.send(b'HTTP/1.1 200 OK \r\n\r\n')
-        else:
-            conn.send(b'HTTP/1.1 404 NOT FOUND \r\n\r\n')
+    while True:
 
+        conn, addr = server_socket.accept()
+        data = conn.recv(1024).decode('utf-8')
+        with conn:
+            request_first_line = data.split('\r\n')[0]
+            request_path = request_first_line.split()[1]
 
-    print("connection ended")
+            print("this is the requrest path:", request_path)
+
+            if request_path == '/':
+                print("send the root")
+                conn.send(b'HTTP/1.1 200 OK\r\n\r\n')
+
+            elif "/echo/" in request_path:
+                print("req has mess")
+
+                message = request_path.split('/')[2]
+
+                res_body = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(message)}\r\n\r\n{message}"
+
+                print(message)
+                conn.send(res_body.encode('utf-8'))
+            else:
+                conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
+
+        print("connection done")
 
 if __name__ == "__main__":
     main()
