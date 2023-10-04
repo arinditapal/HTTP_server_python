@@ -1,14 +1,10 @@
 import socket
+import time
+import threading
 
-
-def main():
-
-    server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-
-    # print(conn, addr) 
-    while True:
-
-        conn, addr = server_socket.accept()
+def handle_conn(conn, thread_no):
+        print("\ninside of a thread: ", thread_no)
+        # print("connection: ", conn)
         data = conn.recv(1024).decode('utf-8')
 
         parsed_data = data.strip().split("\r\n")
@@ -34,6 +30,12 @@ def main():
                 print("send the root")
                 conn.send(b'HTTP/1.1 200 OK\r\n\r\n')
 
+            elif request_path == "/sleep":
+                time.sleep(30)
+                response_body = "HTTP/1.1 200 OK\r\n\r\n"
+
+                conn.send(response_body.encode('utf-8'))
+
             elif "/user-agent" in request_path:
                 response_body = headers['user-agent']
                 print("response body: ", response_body)
@@ -44,7 +46,7 @@ def main():
             elif "/echo/" in request_path:
                 print("req has mess")
 
-                message = request_path[6:]
+                message = request_path.split('/')[2]
                 print(message)
 
                 res_body = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(message)}\r\n\r\n{message}"
@@ -55,7 +57,22 @@ def main():
             else:
                 conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
 
-        print("connection done")
+        print("connection done\n")
+
+def main():
+
+    server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
+
+    i = 0
+    while True:
+
+        conn, addr = server_socket.accept()
+        # print("conn: ", conn)
+        th = threading.Thread(target=handle_conn, args=(conn, i))
+        th.start()
+        # print("connection no: ", i)
+        i += 1
+
 
 if __name__ == "__main__":
     main()
