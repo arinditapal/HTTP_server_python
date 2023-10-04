@@ -1,6 +1,13 @@
 import socket
 import time
 import threading
+import os
+import sys
+
+print(os.getcwd())
+# files = os.listdir()
+
+# print(sys.argv)
 
 def handle_conn(conn, thread_no):
         print("\ninside of a thread: ", thread_no)
@@ -43,7 +50,7 @@ def handle_conn(conn, thread_no):
 
                 conn.send(response.encode('utf-8'))
 
-            elif "/echo/" in request_path:
+            elif "/echo" in request_path:
                 print("req has mess")
 
                 message = request_path[6:]
@@ -53,6 +60,26 @@ def handle_conn(conn, thread_no):
 
                 print(message)
                 conn.send(res_body.encode('utf-8'))
+
+            elif "/files" in request_path:
+                new_directory = os.getcwd() + '/' + sys.argv[2]
+                os.chdir(new_directory)
+
+                files = os.listdir()
+                search_file = request_path[7:]
+                print("search file ", search_file, files)
+
+                if search_file.strip() in files:
+                    print("true")
+                    # # read file
+                    body = ''
+                    with open(search_file, 'r') as file:
+                        body = file.read()
+                    body = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:{len(body)}\r\n\r\n{body}"
+                    conn.send(body.encode('utf-8'))
+                else:
+                    print("false")
+                    conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
 
             else:
                 conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
