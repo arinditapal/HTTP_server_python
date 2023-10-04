@@ -4,13 +4,13 @@ import threading
 import os
 import sys
 
-print(os.getcwd())
+# print(os.getcwd())
 # files = os.listdir()
 
 # print(sys.argv)
 
 def handle_conn(conn, thread_no):
-        print("\ninside of a thread: ", thread_no)
+        # print("\ninside of a thread: ", thread_no)
         # print("connection: ", conn)
         data = conn.recv(1024).decode('utf-8')
 
@@ -28,13 +28,13 @@ def handle_conn(conn, thread_no):
             line = line.split(':')
             headers[line[0].lower()] = line[1].strip()
 
-        print(f"start line: {status_line} \nheaders: {headers}")
+        # print(f"start line: {status_line} \nheaders: {headers}")
 
 
         with conn:
 
             if request_path == '/':
-                print("send the root")
+                # print("send the root")
                 conn.send(b'HTTP/1.1 200 OK\r\n\r\n')
 
             elif request_path == "/sleep":
@@ -62,6 +62,7 @@ def handle_conn(conn, thread_no):
                 conn.send(res_body.encode('utf-8'))
 
             elif "/files" in request_path:
+                root = os.getcwd()
                 new_directory = os.getcwd() + '/' + sys.argv[2]
                 os.chdir(new_directory)
 
@@ -80,6 +81,7 @@ def handle_conn(conn, thread_no):
                 else:
                     print("false")
                     conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
+                os.chdir(root)
 
             else:
                 conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
