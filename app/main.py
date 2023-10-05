@@ -4,76 +4,82 @@ import threading
 import os
 import sys
 
-# print(os.getcwd())
-# files = os.listdir()
-
+# getting the arguments while runing the code
 # print(sys.argv)
 
 def handle_conn(conn, thread_no):
-        # print("\ninside of a thread: ", thread_no)
-        # print("connection: ", conn)
         data = conn.recv(1024).decode('utf-8')
 
         parsed_data = data.strip().split("\r\n")
         status_line = parsed_data[0]
         parsed_header = parsed_data[1:]
+        request_body_content = parsed_data[-1]
+
+        print("body of request: ", request_body_content)
 
         request_method = status_line.split()[0]
         request_path = status_line.split()[1]
 
-        # print(request_method, request_path)
-        # print(parsed_header)
         headers = {}
         for line in parsed_header:
             line = line.split(':')
             headers[line[0].lower()] = line[1].strip()
 
-        # print(f"start line: {status_line} \nheaders: {headers}")
-
-
         with conn:
 
             if request_path == '/':
-                # print("send the root")
-                conn.send(b'HTTP/1.1 200 OK\r\n\r\n')
+                response = "HTTP/1.1 200 OK\r\n\r\n"
+                conn.send(response.encode('utf-8'))
 
             elif request_path == "/sleep":
                 time.sleep(30)
-                response_body = "HTTP/1.1 200 OK\r\n\r\n"
-
-                conn.send(response_body.encode('utf-8'))
-
-            elif "/user-agent" in request_path:
-                response_body = headers['user-agent']
-                print("response body: ", response_body)
-                response = f"HTTP/1.1 200 OK\r\nContent-type: text/plain\r\ncontent-length: {len(response_body)}\r\n\r\n{response_body}"
+                response = "HTTP/1.1 200 OK\r\n\r\n"
 
                 conn.send(response.encode('utf-8'))
 
-            elif "/echo" in request_path:
+            elif "/user-agent" in request_path:
+                response = headers['user-agent']
+                print("response body: ", response)
+                response = f"HTTP/1.1 200 OK\r\nContent-type: text/plain\r\ncontent-length: {len(response)}\r\n\r\n{response}"
+
+                conn.send(response.encode('utf-8'))
+
+            elif "/echo/" in request_path:
                 print("req has mess")
 
-                message = request_path[6:]
-                print(message)
+                request_message = request_path[6:]
+                print(request_message)
 
-                res_body = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(message)}\r\n\r\n{message}"
+                response = f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(request_message)}\r\n\r\n{request_message}"
 
-                print(message)
-                conn.send(res_body.encode('utf-8'))
+                print(request_message)
+                conn.send(response.encode('utf-8'))
 
-            elif "/files" in request_path:
-
-                file_path = './' + sys.argv[-1] + request_path[6:]
-                print(file_path)
+            elif "/files/" in request_path:
+                file_name = request_path[7:]
+                folder_name = sys.argv[2]
+                file_path = os.path.join(folder_name, file_name)
+                print("file_path: ", file_path)
                 body_of_file = ''
-                with open(file_path, 'r') as file:
-                    body_of_file = file.read()
-                
-                res_body = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:{len(body_of_file)}\r\n\r\n{body_of_file}"
-                print(f"\n{res_body}")
 
-                conn.send(res_body.encode('utf-8'))
+                if request_method.upper() == "GET":
+                    try:
+                        with open(file_path, 'r') as file:
+                            body_of_file = file.read()
+                        
+                        print("contents: ", body_of_file)
+                        
+                        response = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:{len(body_of_file)}\r\n\r\n{body_of_file}"
+                        print(f"\n{response}")
 
+                        conn.send(response.encode('utf-8'))
+                    except:
+                        print("file not found")
+                        conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
+                # elif request_method.upper() == "POST":
+
+                #     with open(file_path, 'w') as file:
+                #         file.write(body_of_file)
             else:
                 conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
 
