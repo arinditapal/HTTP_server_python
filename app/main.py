@@ -15,15 +15,17 @@ def handle_conn(conn, thread_no):
         parsed_header = parsed_data[1:]
         request_body_content = parsed_data[-1]
 
-        print("body of request: ", request_body_content)
+        print("body of request: ", request_body_content, type(request_body_content))
 
         request_method = status_line.split()[0]
         request_path = status_line.split()[1]
 
         headers = {}
         for line in parsed_header:
-            line = line.split(':')
-            headers[line[0].lower()] = line[1].strip()
+            line = line.split(': ')
+            headers[line[0].lower()] = line[-1].strip()
+        
+        print(headers)
 
         with conn:
 
@@ -55,31 +57,40 @@ def handle_conn(conn, thread_no):
                 print(request_message)
                 conn.send(response.encode('utf-8'))
 
-            elif "/files/" in request_path:
+            elif "/files/" in request_path and  request_method == "GET":
                 file_name = request_path[7:]
                 folder_name = sys.argv[2]
                 file_path = os.path.join(folder_name, file_name)
                 print("file_path: ", file_path)
                 body_of_file = ''
 
-                if request_method.upper() == "GET":
-                    try:
-                        with open(file_path, 'r') as file:
-                            body_of_file = file.read()
-                        
-                        print("contents: ", body_of_file)
-                        
-                        response = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:{len(body_of_file)}\r\n\r\n{body_of_file}"
-                        print(f"\n{response}")
+                try:
+                    with open(file_path, 'r') as file:
+                        body_of_file = file.read()
+                    
+                    print("contents: ", body_of_file)
+                    
+                    response = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:{len(body_of_file)}\r\n\r\n{body_of_file}"
+                    print(f"\n{response}")
 
-                        conn.send(response.encode('utf-8'))
-                    except:
-                        print("file not found")
-                        conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
-                # elif request_method.upper() == "POST":
+                    conn.send(response.encode('utf-8'))
+                except:
+                    print("file not found")
+                    conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
 
-                #     with open(file_path, 'w') as file:
-                #         file.write(body_of_file)
+            elif "/files/" in request_path and request_method == "POST":
+                file_name = request_path[7:]
+                folder_name = sys.argv[2]
+                file_path = os.path.join(folder_name, file_name)
+                print("file_path: ", file_path)
+
+                with open(file_path, 'w') as file:
+                    file.write(request_body_content)
+
+                response = f"HTTP/1.1 201 OK\r\n\r\n"
+
+                conn.send(response.encode('utf-8'))
+
             else:
                 conn.send(b'HTTP/1.1 404 NOT FOUND\r\n\r\n')
 
