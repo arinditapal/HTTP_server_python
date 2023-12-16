@@ -9,13 +9,15 @@ import sys
 
 def handle_conn(conn, thread_no):
         data = conn.recv(1024).decode('utf-8')
+        print("> request")
+        print(data)
 
         parsed_data = data.strip().split("\r\n")
         status_line = parsed_data[0]
         parsed_header = parsed_data[1:]
         request_body_content = parsed_data[-1]
 
-        print("body of request: ", request_body_content, type(request_body_content))
+        # print("body of request: ", request_body_content, type(request_body_content))
 
         request_method = status_line.split()[0]
         request_path = status_line.split()[1]
@@ -25,7 +27,7 @@ def handle_conn(conn, thread_no):
             line = line.split(': ')
             headers[line[0].lower()] = line[-1].strip()
         
-        print(headers)
+        # print(headers)
 
         with conn:
 
@@ -61,17 +63,17 @@ def handle_conn(conn, thread_no):
                 file_name = request_path[7:]
                 folder_name = sys.argv[2]
                 file_path = os.path.join(folder_name, file_name)
-                print("file_path: ", file_path)
+                # print("file_path: ", file_path)
                 body_of_file = ''
 
                 try:
                     with open(file_path, 'r') as file:
                         body_of_file = file.read()
                     
-                    print("contents: ", body_of_file)
+                    # print("contents: ", body_of_file)
                     
-                    response = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length:{len(body_of_file)}\r\n\r\n{body_of_file}"
-                    print(f"\n{response}")
+                    response = f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:{len(body_of_file)}\r\n\r\n{body_of_file}"
+                    # print(f"\n{response}")
 
                     conn.send(response.encode('utf-8'))
                 except:
